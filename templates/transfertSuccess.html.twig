@@ -7,7 +7,10 @@
     </head>
     <body>
         {% block body %}{% endblock %}
-        {{ infos.name }}
+        {{ data.name }}<br>
+        {{ data.sender }}<br>
+        {{ data.receiver }}<br>
+        {{ data.fileName }}
         <hr>
         <h1>Envoyer avec succès !</h1>
         {% block javascripts %}{% endblock %}

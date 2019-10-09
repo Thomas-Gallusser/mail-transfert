@@ -11,7 +11,7 @@
   class buttonTransfert extends AbstractType {
     public function buildForm(FormBuilderInterface $builder, array $options) {
       $builder->add('send', SubmitType::class, [
-          'label'           => 'Commencer à transférer',
+          'label' => 'Commencer à transférer',
       ]);
     }
   }
