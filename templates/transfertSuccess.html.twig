@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        {% block stylesheets %}{% endblock %}
+    </head>
+    <body>
+        {% block body %}{% endblock %}
+        {{ infos.name }}
+        <hr>
+        <h1>Envoyer avec succès !</h1>
+        {% block javascripts %}{% endblock %}
+    </body>
+</html>
