@@ -2,7 +2,6 @@
 namespace App\Controller;
 
 use App\Form\formTransfert;
-use App\Form\buttonTransfert;
 use App\Entity\EntityTransfert;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,7 +12,11 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\Validator\Constraints as Assert;
+use sendMail;
+use ZipArchive;
 
 
 class transfertController extends AbstractController {
@@ -21,8 +24,9 @@ class transfertController extends AbstractController {
    * @Route("/")
    */
   public function index(Request $request) {
-      $form = $this->createForm(buttonTransfert::class);
+      $form = $this->createForm(FormType::class)->add('send', SubmitType::class, ['label' => 'Commencer à transférer']);
       $form->handleRequest($request);
+
       if ($form->isSubmitted()) {
            return $this->redirectToRoute('transfert');
        }
@@ -35,7 +39,7 @@ class transfertController extends AbstractController {
   /**
    * @Route("/transfert", name="transfert")
    */
-  public function new(Request $request) {
+  public function new(Request $request, \Swift_Mailer $mailer) {
       $envoie = new EntityTransfert();
       $formBuilder = $this->get('form.factory')->createBuilder(FormType::class, $envoie);
 
@@ -67,25 +71,45 @@ class transfertController extends AbstractController {
                     'label'           => 'Envoyer le(s) fichier(s)',
                 ]);
 
-      // $form = $this->createForm(formTransfert::class);
       $form = $formBuilder->getForm();
       $form->handleRequest($request);
 
       if ($form->isSubmitted() && $form->isValid()) {
-          dump($form->getData());
-           // $form->getData() holds the submitted values
-           // but, the original `$task` variable has also been updated
-           // $myForm = $form->getData();
+        $elements = $form->getData();
+        $entityManager = $this->getDoctrine()->getManager();
+        $originalName = $request->files->get('form')['fileName']->getClientOriginalName();
 
-           // ... perform some action, such as saving the task to the database
-           // for example, if Task is a Doctrine entity, save it!
-           // $entityManager = $this->getDoctrine()->getManager();
-           // $entityManager->persist($task);
-           // $entityManager->flush();
+        $zipName = $elements->getName().'-'.uniqid() . '.zip';
+        $zipfile = new ZipArchive();
+        $zipfile->open($this->getParameter('file_directory') . $zipName, ZipArchive::CREATE);
+        $zipfile->addFile($elements->getFileName(), $originalName);
+        $zipfile->close();
+        $elements->setFileName($zipName);
 
-           return $this->render('transfertSuccess.html.twig', [
-             'data' => $form->getData(),
-           ]);
+        $entityManager->persist($elements);
+        $entityManager->flush();
+
+        $message = (new \Swift_Message())
+          ->setSubject('EasyTransfer - Fichiers envoyés par ' . $elements->getName())
+          ->setFrom([$elements->getSender()])
+          ->setTo([$elements->getReceiver()]);
+
+          // $cid = $message->embed(\Swift_Image::fromPath('img/logo.png'));
+          $message->setBody(
+            $this->renderView('email.txt.twig', [
+                // 'nomDestinataire' => $elements->getName(),
+                // 'nomAuteur' => $elements->getSender(),
+                'link' => 'uploads/' . $zipName /*,
+                'imgLogo' => $cid */
+            ]),
+            'text/html'
+          );
+
+          $mailer->send($message);
+
+        // $this->sendM('test');
+
+        return $this->render('transfertSuccess.html.twig');
 
        }
 

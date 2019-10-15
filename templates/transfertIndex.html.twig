@@ -2,12 +2,18 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
         <title>{% block title %}Welcome!{% endblock %}</title>
         {% block stylesheets %}{% endblock %}
     </head>
     <body>
         {% block body %}{% endblock %}
-        {{ form(btn) }}
+            {{ form_start(btn) }}
+            <div class="container">
+              {{ form_row(btn.send) }}
+            </div>
+
+          {{ form_end(btn) }}
         {% block javascripts %}{% endblock %}
     </body>
 </html>
